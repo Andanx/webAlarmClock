@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1.0">
+		<title>网页小闹铃</title>
+		<link href="images/Alarm.png" rel="icon" type="image/x-icon">
+		<link rel="stylesheet" href="main.css" type="text/css" />
+	</head>
+	<body>
+		<div id="mainWrap">
+			<!--左侧模块-->
+			<div class="alarmLeft">
+				<!--弹框提醒-->
+				<div class="warningDel" v-show="displayDelWar">
+					<div class="warningDelTop" :style="{background:imagesTo,backgroundSize: '234px 99px'}">
+						<a @click="displayDelWar = false">×</a>
+					</div>
+					<div class="warningDelBottom">
+						<a>{{warDel.delText}}</a>
+						<p v-show="warDel.noData">
+							<a @click="judgeDel">{{warDel.delType}}</a>
+							<a @click="displayDelWar = false">取消删除</a>
+						</p>
+					</div>
+				</div>
+				<div class="warningDelMask" @click="displayDelWar = false" v-show="displayDelWar"></div>
+				
+				<div class="title">Alarm</div>
+				<!--虚拟时钟-->
+				<div class="clockWrap">
+					<div class="Mask"></div>
+					<div class="secondPointer">
+						<div class="semiCircleLeft"></div>
+						<div class="semiCircleRight"></div>
+					</div>
+					<div class="maskCircular"></div>
+					<div class="secondBg"></div>
+					<div class="ClockDial">
+						<ol>
+			                <li>12</li>
+			                <li>3</li>
+			                <li>6</li>
+			                <li>9</li>
+			            </ol>
+			            <div class="ding"></div>
+			            <div class="hour"></div>
+			            <div class="minute"></div>
+					</div>
+				</div>
+				
+				<!--添加新提醒及提醒列表-->
+				<div class="alarmForm">
+					<div class="del">
+						<span></span>
+						<div class="delWrap">
+							<p :style="{marginLeft:delAllMl}">
+								<a @click="clickDel">编辑</a>
+							    <a @click="selectDelAll(2)">删除全部</a>
+						    </p>
+						</div>
+					</div>
+					<div class="alarmList" :style="{background:listKongBg}">
+						<div class="alarmListWrap">
+							<div v-for="(item,index) in alarmList" class="eachAlarmItemWrap">
+						    <div :style="{marginLeft:delMl}" class="eachAlarmItem">
+								<div class="eachAlarmItemContent">
+									<div class="alarmTime">
+										<div class="labelTime">
+											<div class="label" :style="{background:item.labelColor}">
+												<p></p>
+											</div>
+											<a>{{item.time}}</a>
+											<i v-show="item.loopPlay">循环提醒</i>
+											<i v-show="!item.loopPlay">提醒一次</i>
+										</div>
+										<span :title="item.content">{{item.content}}</span>
+									</div>
+									<div @click="controlAlarmFu(item)" :class="{KGbutChangBg:item.state,KGbutTr:KGbutTrBd}" class="KGbut KGbutMR-L">
+										<span :class="{KGbutChangSpan:item.state,KGbutTr:KGbutTrBd}"></span>
+									</div>
+								</div>
+								<div class="delAlarm" @click="selectDel(item,1)">删除</div>
+							</div>
+						</div>
+						</div>
+					</div>
+					<div class="add" @click="controlAlarmRightDisplay">+</div>
+				</div>
+			</div>
+			
+			<!--右侧模块-->
+			<div class="alarmRight">
+				<div v-show="infalarmBgJudge" class="infalarm">
+					<transition name="infalarmDS">
+					<div v-show="infalarmBgJudge" class="infalarmBg">
+						<a>信息不完整</a>
+						<a>or</a>
+						<a>提醒时间已存在</a>
+						<p @click="changinfalarmBg">确定</p>
+					</div>
+					</transition>
+					<span @click="changinfalarmBg"></span>
+				</div>
+				<div class="alarmRightKong" :class="{alarmRightKongJudge:alarmRightdisplayJudge}">
+					<p></p>
+				</div>
+				<div class="title">New Alarm</div>
+				<!--设置提醒时间-->
+				<div class="selectTime">
+					<p>Select Time</p>
+					<audio class="musicPlayNormal" src="images/Ringtone.mp3"></audio>
+					<audio class="musicPlayWarning" src="images/908.mp3"></audio>
+					<div class="selectTimeList">
+						<div @mousewheel="selectSpecificTime($event,-756,1)" class="selectHours">
+							<div class="selectHoursWrap defaultFont" :style="{marginTop:TPHoursNumb + 'px'}">
+								<span ref="eachHourSpan" v-for="(items,index) in selectHoursNumb">{{items}}</span>
+							</div>
+					    </div>
+					    <p>:</p>
+					    <div @mousewheel="selectSpecificTime($event,-2052,2)" class="selectMinutes">
+					    	<div class="selectMinutesWrap defaultFont" :style="{marginTop:TPMinutesNumb + 'px'}">
+								<span ref="eachminuteSpan" v-for="(items,index) in selectMinutesNumb">{{items}}</span>
+							</div>
+					    </div>
+					</div>
+				</div>
+				<!--设置提醒内容-->
+				<div class="alarmContent">
+					<div class="writeContent">
+						<a>请输入要提醒的内容</a>
+						<textarea rows="10" cols="30" v-model="referringData.content"></textarea>
+						<span>超过16个汉字在列表中自动隐藏剩余部分</span>
+					</div>
+					<div class="selextLabel">
+						<span>
+					      <input type="radio" id="important" value="important" name="selectItem" v-model="alarmColor" checked="checked"/>
+					      <label for="important">
+					    	<div class="label labelRight" style="background: rgb(255, 0, 72);">
+					        	<p></p>
+					        </div>
+					        <a>重要提醒</a>
+					      </label>
+					    </span>
+					    <span>
+					      <input type="radio" id="commonly" value="commonly" name="selectItem" v-model="alarmColor"/>
+					      <label for="commonly">
+					    	<div class="label labelRight" style="background: rgb(255, 203, 22);">
+					        	<p></p>
+					        </div>
+					        <a>一般提醒</a>
+					      </label>
+					    </span>
+					    <span>
+					      <input type="radio" id="secondary" value="secondary" name="selectItem" v-model="alarmColor"/>
+					      <label for="secondary">
+					    	<div class="label labelRight" style="background: rgb(105, 228, 183);">
+					        	<p></p>
+					        </div>
+					        <a>次要提醒</a>
+					      </label>
+					    </span>
+					</div>
+					<div class="reapeatRington">
+						<a>铃声提醒循环</a>
+						<div @click="controlLoopFu" :class="{KGbutChangBg:this.referringData.loopPlay,KGbutTr:KGbutTrBd}" class="KGbut KGbutMR-R">
+							<span :class="{KGbutChangSpan:this.referringData.loopPlay,KGbutTr:KGbutTrBd}"></span>
+						</div>
+					</div>
+					<div class="dashed">
+						<span></span>
+						<i v-for="items in dashedNumb"></i>
+						<span></span>
+					</div>
+					<div class="submit">
+						<div class="Reward">
+							<div class="RewardContent">
+								<span></span>
+								<div class="RewardContentText">
+									<i>应用还不错</i>
+									<i>请作者喝瓶水吧！</i>
+									<span>大佬级别</span>
+								</div>
+							</div>
+							<p></p>
+							<p></p>
+						</div>
+						<a @click="SubData">确认创建</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+    <script type="text/javascript" src="mainVue.js"></script>
+    <script type="text/javascript" src="vue-router.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+</html>
